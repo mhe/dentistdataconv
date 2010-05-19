@@ -22,6 +22,8 @@ except Exception, e:
 
 def read_slice(filename, slice_dim):
     """Read slice of data from file, return numpy array with data"""
+    # The data is stored in a collection of gzipped files containing
+    # raw 16 bit little endian integers.
     with open(filename,'rb') as f:
         gzipfile = gzip.GzipFile(fileobj=f)
         return np.fromstring(gzipfile.read(), np.int16).reshape(slice_dim)
@@ -39,12 +41,12 @@ def get_data(settings):
         slices = [read_slice(filename, slice_dim) for filename in slice_filenames]
         # This step of combining all the slices to one numpy array is not very
         # memory efficient, but for now it is good enough.
-        print "Combining the data."
+        print "Combining the slices into a single volume."
         __cached_data__ = np.array(slices)
     return __cached_data__
     
 def write_metaimage_header(settings, basename):
-    """Write a metaimage header to filename."""
+    """Write a metaimage header to <basename>.mhd."""
     header = ['NDims = 3',
               'DimSize = %(VolSizeX)s %(VolSizeY)s %(VolSizeZ)s' % settings,
               'ElementType = MET_USHORT',
@@ -57,7 +59,7 @@ def write_metaimage_header(settings, basename):
         f.write('\n'.join(header))
 
 def write_nrrd_header(settings, basename):
-    """Write an nrrd header to filename."""
+    """Write an nrrd header to <basename>.nhdr."""
     header = ['NRRD0001',
             '# Complete NRRD file format specification at:',
             '# http://teem.sourceforge.net/nrrd/format.html',
@@ -74,14 +76,14 @@ def write_nrrd_header(settings, basename):
         f.write('\n'.join(header))
 
 def write_raw_file(settings, basename):
-    """Write raw data to file."""
+    """Write raw data to <basename>.raw."""
     volume_data = get_data(settings)
     filename = basename+'.raw'
     print 'Writing raw data to '+filename+'.'
     volume_data.tofile(filename)
 
 def write_nifti_file(settings, basename):
-    """Write data to a nifti file."""
+    """Write data <basename>.nii."""
     nim = NiftiImage(get_data(settings))
     filename = basename+'.nii'
     print 'Writing data to the nifti file '+filename+'.'    
@@ -93,14 +95,20 @@ def get_settings(input_path):
     if not os.path.isdir(input_path):
         raise RuntimeError("Expected a directory.")
     base_name = os.path.split(input_path)[1]
+    # The settings file (a gzipped XML file) has the same name as
+    # the directory.
     settings_filename = os.path.join(input_path, base_name)
     with open(settings_filename, 'rb') as f:
         gzipfile = gzip.GzipFile(fileobj=f)
-        settings_dom =  parseString(gzipfile.read())
+        settings_dom = parseString(gzipfile.read())
+        # Only a particular part of the XML file is interesting, create
+        # a dictionary for it.
         params_node = settings_dom.getElementsByTagName('FBPParams')[0].\
                                    getElementsByTagName('LibParams')[0]
         settings = dict([(str(n.nodeName), str(n.childNodes[0].data)) for n in \
                 params_node.childNodes if len(n.childNodes) == 1])
+        # The settings filename is used by get_data to determine the filenames
+        # of the slices.
         settings['settings_filename'] = settings_filename
         return settings
 
