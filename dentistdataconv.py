@@ -3,9 +3,16 @@
 """
 dentistdataconv.py
 
-A script to convert dentist data to a better documented format.
+dentistdataconv.py is a simple Python script that converts volumetric dentist
+data to better documented volume formats: [nrrd][1], [MetaImage (mhd)][2], and
+[nifti (nii)][3].
 
-Created by Maarten Everts on 2010-04-14.
+[1]: http://teem.sourceforge.net/nrrd/
+[2]: http://www.itk.org/Wiki/MetaIO/
+[3]: http://nifti.nimh.nih.gov/nifti-1/
+
+Created by Maarten H. Everts
+License: see LICENSE (MIT).
 """
 
 import sys
@@ -18,7 +25,6 @@ try:
     from nifti import NiftiImage
 except Exception, e:
     print "Warning: pynifti not found, .nii output not supported."
-
 
 def read_slice(filename, slice_dim):
     """Read slice of data from file, return numpy array with data"""
@@ -137,9 +143,10 @@ def main():
     settings = get_settings(inputdirectory)
     
     output_mapping = {'nhdr': write_nrrd_header,
-               'mhd': write_metaimage_header,
-               'nii': write_nifti_file,
-               'raw': write_raw_file}
+                      'mhd':  write_metaimage_header,
+                      'nii':  write_nifti_file,
+                      'raw':  write_raw_file
+                     }
     for outputtype in options.outputtypes:
         output_mapping[outputtype](settings, outputbasename)
     print 'Done.'
