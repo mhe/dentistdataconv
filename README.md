@@ -55,7 +55,8 @@ work \ dont't work:
 	
 **nifty** now is **nibabel**
 
-**Install packages**
+Install packages
+-------
 	
 	pip install -r requirements.txt
 
