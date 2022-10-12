@@ -44,10 +44,14 @@ will produce three files:
 
 Reworked (to python 3)
 -------
-This is fork from https://github.com/mhe/dentistdataconv will reworked to Python 3 
+This is fork from https://github.com/mhe/dentistdataconv will reworked to Python 3.
 
-	work: nhdr, metaimage, raw 
-	don't worked: nifti
+Work\Dont't work
+
+	+ nhdr
+	+ metaimage
+	+ raw 
+	- nifti
 
 
 License
