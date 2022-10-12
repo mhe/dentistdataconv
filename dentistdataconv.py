@@ -21,79 +21,88 @@ import numpy as np
 import gzip
 from xml.dom.minidom import parseString
 from optparse import OptionParser
+
 try:
-    from nifti import NiftiImage
-except Exception, e:
-    print "Warning: pynifti not found, .nii output not supported."
+    from nibabel import Nifti1Image, save
+except Exception as e:
+    print("Warning: pynifti not found, .nii output not supported.")
+
 
 def read_slice(filename, slice_dim):
     """Read slice of data from file, return numpy array with data"""
     # The data is stored in a collection of gzipped files containing
     # raw 16 bit little endian integers.
-    with open(filename,'rb') as f:
+    with open(filename, 'rb') as f:
         gzipfile = gzip.GzipFile(fileobj=f)
-        return np.fromstring(gzipfile.read(), np.int16).reshape(slice_dim)
+        return np.frombuffer(gzipfile.read(), np.int16).reshape(slice_dim)
+
 
 __cached_data__ = None
+
 
 def get_data(settings):
     """Return volume data as numpy array. Caches the data."""
     global __cached_data__
     if __cached_data__ is None:
         slice_filenames = [settings['settings_filename'] + '_' + "%03d" % i \
-                            for i in range(int(settings['VolSizeZ']))]
+                           for i in range(int(settings['VolSizeZ']))]
         slice_dim = (int(settings['VolSizeX']), int(settings['VolSizeY']))
-        print "Reading data from the slices."
+        print("Reading data from the slices.")
         slices = [read_slice(filename, slice_dim) for filename in slice_filenames]
         # This step of combining all the slices to one numpy array is not very
         # memory efficient, but for now it is good enough.
-        print "Combining the slices into a single volume."
+        print("Combining the slices into a single volume.")
         __cached_data__ = np.array(slices)
     return __cached_data__
-    
+
+
 def write_metaimage_header(settings, basename):
     """Write a metaimage header to <basename>.mhd."""
     header = ['NDims = 3',
               'DimSize = %(VolSizeX)s %(VolSizeY)s %(VolSizeZ)s' % settings,
               'ElementType = MET_USHORT',
               'ElementSize = %(VoxelSizeX)s %(VoxelSizeY)s %(VoxelSizeZ)s' % settings,
-              'ElementDataFile = '+basename+'.raw',
+              'ElementDataFile = ' + basename + '.raw',
               '']
-    filename = basename+'.mhd'
-    print 'Writing metaimage header to '+filename+'.'
+    filename = basename + '.mhd'
+    print('Writing metaimage header to ' + filename + '.')
     with open(filename, 'wt') as f:
         f.write('\n'.join(header))
+
 
 def write_nrrd_header(settings, basename):
     """Write an nrrd header to <basename>.nhdr."""
     header = ['NRRD0001',
-            '# Complete NRRD file format specification at:',
-            '# http://teem.sourceforge.net/nrrd/format.html',
-            'content: volume',
-            'type: unsigned short',
-            'dimension: 3',
-            'sizes: %(VolSizeX)s %(VolSizeY)s %(VolSizeZ)s' % settings,
-            'spacings: %(VoxelSizeX)s %(VoxelSizeY)s %(VoxelSizeZ)s' % settings,
-            'data file: '+basename+'.raw',
-            '']
-    filename = basename+'.nhdr'
-    print 'Writing nrrd header to '+filename+'.'            
+              '# Complete NRRD file format specification at:',
+              '# http://teem.sourceforge.net/nrrd/format.html',
+              'content: volume',
+              'type: unsigned short',
+              'dimension: 3',
+              'sizes: %(VolSizeX)s %(VolSizeY)s %(VolSizeZ)s' % settings,
+              'spacings: %(VoxelSizeX)s %(VoxelSizeY)s %(VoxelSizeZ)s' % settings,
+              'data file: ' + basename + '.raw',
+              '']
+    filename = basename + '.nhdr'
+    print('Writing nrrd header to ' + filename + '.')
     with open(filename, 'wt') as f:
         f.write('\n'.join(header))
+
 
 def write_raw_file(settings, basename):
     """Write raw data to <basename>.raw."""
     volume_data = get_data(settings)
-    filename = basename+'.raw'
-    print 'Writing raw data to '+filename+'.'
+    filename = basename + '.raw'
+    print('Writing raw data to ' + filename + '.')
     volume_data.tofile(filename)
+
 
 def write_nifti_file(settings, basename):
     """Write data <basename>.nii."""
-    nim = NiftiImage(get_data(settings))
-    filename = basename+'.nii'
-    print 'Writing data to the nifti file '+filename+'.'    
+    nim = Nifti1Image(get_data(settings))
+    filename = basename + '.nii'
+    print('Writing data to the nifti file ' + filename + '.')
     nim.save(filename)
+
 
 def get_settings(input_path):
     """Read settings from xml file."""
@@ -109,14 +118,15 @@ def get_settings(input_path):
         settings_dom = parseString(gzipfile.read())
         # Only a particular part of the XML file is interesting, create
         # a dictionary for it.
-        params_node = settings_dom.getElementsByTagName('FBPParams')[0].\
-                                   getElementsByTagName('LibParams')[0]
+        params_node = settings_dom.getElementsByTagName('FBPParams')[0]. \
+            getElementsByTagName('LibParams')[0]
         settings = dict([(str(n.nodeName), str(n.childNodes[0].data)) for n in \
-                params_node.childNodes if len(n.childNodes) == 1])
+                         params_node.childNodes if len(n.childNodes) == 1])
         # The settings filename is used by get_data to determine the filenames
         # of the slices.
         settings['settings_filename'] = settings_filename
         return settings
+
 
 def main():
     usage = "usage: %prog [options] inputdirectory outputbasename"
@@ -126,10 +136,10 @@ def main():
     parser.add_option('-m', '--metaimage', dest='outputtypes', action='append_const',
                       const='mhd', help='write metaimage header (mhd)')
     parser.add_option('-i', '--nifti', dest='outputtypes', action='append_const',
-                      const='nii', help='write nifti file (nii)')        
+                      const='nii', help='write nifti file (nii)')
     parser.add_option('-r', '--raw', dest='outputtypes', action='append_const',
                       const='raw', help='write raw data to file (used by header files)')
-            
+
     (options, args) = parser.parse_args()
     if options.outputtypes is None:
         parser.error('Need atleast one output type.')
@@ -137,20 +147,21 @@ def main():
         parser.error('Missing basename for output.')
     elif len(args) > 2:
         parser.error('Too many arguments, need two.')
-    
+
     inputdirectory = args[0]
     outputbasename = args[1]
     settings = get_settings(inputdirectory)
-    
+
     output_mapping = {'nhdr': write_nrrd_header,
-                      'mhd':  write_metaimage_header,
-                      'nii':  write_nifti_file,
-                      'raw':  write_raw_file
-                     }
+                      'mhd': write_metaimage_header,
+                      'nii': write_nifti_file,
+                      'raw': write_raw_file
+                      }
     for outputtype in options.outputtypes:
         output_mapping[outputtype](settings, outputbasename)
-    print 'Done.'
+    print('Done.')
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
