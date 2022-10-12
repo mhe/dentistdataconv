@@ -46,8 +46,8 @@ Reworked (to python 3)
 -------
 This is fork from https://github.com/mhe/dentistdataconv will reworked to Python 3 
 
-work: nhdr, metaimage, raw 
-don't worked: nifti
+	work: nhdr, metaimage, raw 
+	don't worked: nifti
 
 
 License
