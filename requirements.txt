@@ -1,7 +1,2 @@
-sys
-os
 numpy
-gzip
 nibabel
-xml.dom.minidom
-optparse
