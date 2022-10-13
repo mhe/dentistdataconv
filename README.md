@@ -46,15 +46,15 @@ Reworked (to python 3)
 -------
 This is fork from https://github.com/mhe/dentistdataconv will reworked to Python 3.
 
+**nifty** now is **nibabel**
+
 work \ dont't work:
 
 	+ nhdr
 	+ metaimage
 	+ raw 
-	- nifti
+	+ nifti (testing...)
 	
-**nifty** now is **nibabel**
-
 Install packages
 -------
 	
