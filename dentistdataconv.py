@@ -23,9 +23,9 @@ from xml.dom.minidom import parseString
 from optparse import OptionParser
 
 try:
-    from nibabel import Nifti1Image, save
+    import nibabel as nib
 except Exception as e:
-    print("Warning: pynifti not found, .nii output not supported.")
+    print("Warning: nibabel (ex. Nifti) not found, .nii output not supported.")
 
 
 def read_slice(filename, slice_dim):
@@ -98,10 +98,10 @@ def write_raw_file(settings, basename):
 
 def write_nifti_file(settings, basename):
     """Write data <basename>.nii."""
-    nim = Nifti1Image(get_data(settings))
+    img = nib.Nifti1Image(get_data(settings), np.eye(4))
     filename = basename + '.nii'
     print('Writing data to the nifti file ' + filename + '.')
-    nim.save(filename)
+    nib.save(img, filename)
 
 
 def get_settings(input_path):
