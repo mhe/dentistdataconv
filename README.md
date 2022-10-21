@@ -53,7 +53,7 @@ work \ dont't work:
 	+ nhdr
 	+ metaimage
 	+ raw 
-	+ nifti (testing...)
+	+- nifti (testing...)
 	
 Install packages
 -------
